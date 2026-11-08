@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ViRtU4Lios — Free Fire Guest Generator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, 'SF Pro Display', 'Segoe UI', Tahoma, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+  html, body { min-height: 100%; }
+
+  body {
+    min-height: 100vh;
+    padding: 48px 20px 60px;
+    background: #060203;
+    position: relative;
+    overflow-x: hidden;
+    color: #e2e8f0;
+    font-feature-settings: "ss01", "ss02";
+  }
+
+  /* ===== Background Layers ===== */
+  .bg-base {
+    position: fixed; inset: 0; z-index: -5;
+    background:
+      radial-gradient(ellipse 100% 70% at 50% -20%, #5c0a0a 0%, transparent 55%),
+      radial-gradient(ellipse 70% 60% at 100% 100%, #8f0f0f 0%, transparent 55%),
+      radial-gradient(ellipse 80% 60% at 0% 40%, #3b0505 0%, transparent 65%),
+      #060203;
+  }
+
+  .bg-orb {
+    position: fixed; z-index: -4;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.55;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .bg-orb.o1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #dc2626 0%, transparent 70%);
+    top: -150px; left: -150px;
+    animation: orbFloat1 22s ease-in-out infinite;
+  }
+
+  .bg-orb.o2 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, #b91c1c 0%, transparent 70%);
+    bottom: -200px; right: -180px;
+    animation: orbFloat2 28s ease-in-out infinite;
+    opacity: 0.4;
+  }
+
+  .bg-orb.o3 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #ef4444 0%, transparent 70%);
+    top: 40%; left: 55%;
+    animation: orbFloat3 25s ease-in-out infinite;
+    opacity: 0.3;
+  }
+
+  @keyframes orbFloat1 {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    50%     { transform: translate(80px, 60px) scale(1.15); }
+  }
+  @keyframes orbFloat2 {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    50%     { transform: translate(-90px, -70px) scale(1.1); }
+  }
+  @keyframes orbFloat3 {
+    0%,100% { transform: translate(-50%, -50%) scale(1); }
+    50%     { transform: translate(-40%, -60%) scale(1.2); }
+  }
+
+  .bg-grid {
+    position: fixed; inset: 0; z-index: -3;
+    background-image:
+      linear-gradient(rgba(239, 68, 68, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(239, 68, 68, 0.05) 1px, transparent 1px);
+    background-size: 70px 70px;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    animation: gridMove 40s linear infinite;
+  }
+
+  @keyframes gridMove {
+    from { background-position: 0 0; }
+    to   { background-position: 70px 70px; }
+  }
+
+  .bg-noise {
+    position: fixed; inset: 0; z-index: -2; opacity: 0.05; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Scanline effect */
+  .bg-scanlines {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    opacity: 0.3;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(239, 68, 68, 0.02) 2px,
+      rgba(239, 68, 68, 0.02) 4px
+    );
+  }
+
+  /* ===== Container ===== */
+  .container {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    z-index: 1;
+  }
+
+  /* ===== Brand Header ===== */
+  .brand {
+    text-align: center;
+    margin-bottom: 44px;
+    animation: brandIn 1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes brandIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .brand-icon {
+    position: relative;
+    width: 64px; height: 64px;
+    border-radius: 20px;
+    display: grid; place-items: center;
+    font-size: 32px;
+    background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+    box-shadow:
+      0 14px 40px -10px rgba(239, 68, 68, 0.8),
+      0 6px 20px rgba(0, 0, 0, 0.5),
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.3);
+    animation: iconPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes iconPulse {
+    0%,100% { box-shadow: 0 14px 40px -10px rgba(239, 68, 68, 0.8), 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 1.5px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 8px rgba(0, 0, 0, 0.3); }
+    50%     { box-shadow: 0 20px 60px -10px rgba(239, 68, 68, 1), 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 1.5px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 8px rgba(0, 0, 0, 0.3); }
+  }
+
+  .brand-icon::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 19px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.25), transparent 45%);
+    pointer-events: none;
+  }
+
+  .brand h1 {
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: -1.2px;
+    background: linear-gradient(135deg, #ffffff 0%, #fecaca 35%, #ef4444 70%, #991b1b 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 5s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0%,100% { background-position: 0% 50%; }
+    50%     { background-position: 100% 50%; }
+  }
+
+  .brand p {
+    font-size: 14px;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+
+  .brand p span {
+    color: #ef4444;
+    font-weight: 800;
+    text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  }
+
+  /* ===== Form (Liquid Glass) ===== */
+  .form-section {
+    position: relative;
+    background: rgba(20, 8, 8, 0.5);
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    border-radius: 24px;
+    padding: 32px 28px;
+    border: 1px solid rgba(239, 68, 68, 0.18);
+    box-shadow:
+      0 30px 70px -20px rgba(0, 0, 0, 0.9),
+      0 10px 30px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    margin-bottom: 22px;
+    overflow: hidden;
+    animation: formIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+  }
+
+  @keyframes formIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(5px); }
+    to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  .form-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -50%;
+    width: 60%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(239, 68, 68, 0.08), transparent);
+    transform: skewX(-15deg);
+    animation: sheen 7s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes sheen {
+    0%,100% { left: -60%; }
+    50%     { left: 120%; }
+  }
+
+  .form-row { margin-bottom: 22px; }
+  .form-row:last-of-type { margin-bottom: 26px; }
+
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #fca5a5;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .form-label::before {
+    content: '';
+    width: 3px; height: 14px;
+    background: linear-gradient(180deg, #ef4444, #7f1d1d);
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 15px 18px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1.5px solid rgba(239, 68, 68, 0.15);
+    outline: none;
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, transform 0.2s;
+    font-family: inherit;
+  }
+
+  .form-input::placeholder { color: #52525b; }
+
+  .form-input:focus {
+    border-color: #ef4444;
+    background: rgba(127, 29, 29, 0.15);
+    box-shadow:
+      0 0 0 4px rgba(239, 68, 68, 0.12),
+      0 8px 24px -6px rgba(239, 68, 68, 0.3);
+    transform: translateY(-1px);
+  }
+
+  /* Server buttons */
+  .server-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .server-btn {
+    position: relative;
+    padding: 13px 6px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #71717a;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    text-align: center;
+    user-select: none;
+    font-family: inherit;
+    overflow: hidden;
+  }
+
+  .server-btn:hover:not(:disabled):not(.active) {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+    background: rgba(127, 29, 29, 0.2);
+    box-shadow: 0 6px 18px -4px rgba(239, 68, 68, 0.3);
+  }
+
+  .server-btn:active:not(:disabled) { transform: translateY(0) scale(0.96); }
+
+  .server-btn.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(127, 29, 29, 0.5));
+    border-color: #ef4444;
+    box-shadow:
+      0 0 0 1px rgba(239, 68, 68, 0.4),
+      0 8px 24px -4px rgba(239, 68, 68, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .server-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 7px; right: 7px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 12px #ef4444, 0 0 4px #fff;
+    animation: dotPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes dotPulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50%     { transform: scale(1.3); opacity: 0.8; }
+  }
+
+  .server-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ===== Buttons (Liquid Glass) ===== */
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn {
+    position: relative;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.3s, background 0.3s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-icon {
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    box-shadow:
+      0 14px 36px -8px rgba(239, 68, 68, 0.65),
+      0 6px 16px rgba(0, 0, 0, 0.4),
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: skewX(-20deg);
+    animation: btnShine 3s ease-in-out infinite;
+  }
+
+  @keyframes btnShine {
+    0%, 60%, 100% { left: -100%; }
+    30%           { left: 150%; }
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+    transform: translateY(-3px);
+    box-shadow:
+      0 20px 48px -8px rgba(239, 68, 68, 0.8),
+      0 8px 20px rgba(0, 0, 0, 0.4),
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(-1px) scale(0.99);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    animation: btnPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes btnPulse {
+    0%,100% { box-shadow: 0 14px 36px -8px rgba(239, 68, 68, 0.5), 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 1.5px 0 rgba(255, 255, 255, 0.3); }
+    50%     { box-shadow: 0 14px 36px -8px rgba(239, 68, 68, 0.9), 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 1.5px 0 rgba(255, 255, 255, 0.3); }
+  }
+
+  .btn-secondary {
+    color: #fca5a5;
+    background: rgba(127, 29, 29, 0.15);
+    border: 1.5px solid rgba(239, 68, 68, 0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    font-size: 14px;
+    padding: 14px;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: rgba(127, 29, 29, 0.35);
+    border-color: #ef4444;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 20px -4px rgba(239, 68, 68, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .btn-secondary:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+  .btn-secondary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ===== Progress Bar ===== */
+  .progress-wrap {
+    margin-top: 24px;
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .progress-wrap.show { display: block; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fca5a5;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .progress-spinner {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(239, 68, 68, 0.2);
+    border-top-color: #ef4444;
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .progress-percent {
+    font-size: 22px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #f87171, #ef4444, #7f1d1d);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 3s ease infinite;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+  }
+
+  .progress-track {
+    position: relative;
+    height: 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    overflow: hidden;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+  }
+
+  .progress-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: linear-gradient(90deg, #7f1d1d, #dc2626, #ef4444, #f87171);
+    background-size: 300% 100%;
+    border-radius: 6px;
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow:
+      0 0 20px rgba(239, 68, 68, 0.8),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    animation: progressShine 1.5s linear infinite;
+  }
+
+  @keyframes progressShine {
+    from { background-position: 0% 50%; }
+    to   { background-position: 300% 50%; }
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: fillShine 1.8s ease-in-out infinite;
+  }
+
+  @keyframes fillShine {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  .progress-status {
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: #71717a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .progress-status strong { color: #f87171; font-weight: 700; }
+
+  /* ===== Console ===== */
+  .console {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 11.5px;
+    line-height: 1.65;
+    color: #d4d4d8;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(239, 68, 68, 0.5) transparent;
+    backdrop-filter: blur(15px);
+  }
+
+  .console.show { display: block; animation: fadeIn 0.4s ease; }
+
+  .console::-webkit-scrollbar { width: 6px; }
+  .console::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #ef4444, #7f1d1d);
+    border-radius: 3px;
+  }
+
+  .log-line { padding: 1px 0; word-break: break-all; animation: logIn 0.3s ease; }
+
+  @keyframes logIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .log-info    { color: #71717a; }
+  .log-success { color: #4ade80; }
+  .log-warn    { color: #fbbf24; }
+  .log-done    { color: #f87171; font-weight: 700; }
+  .log-bot     { color: #e2e8f0; }
+  .log-error   { color: #ef4444; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== Search ===== */
+  .search-wrap {
+    margin-top: 18px;
+    position: relative;
+    display: none;
+  }
+
+  .search-wrap.show { display: block; animation: fadeIn 0.4s ease; }
+
+  .search-wrap input {
+    width: 100%;
+    padding: 13px 16px 13px 44px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1.5px solid rgba(239, 68, 68, 0.2);
+    outline: none;
+    transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    font-family: inherit;
+  }
+
+  .search-wrap input::placeholder { color: #52525b; }
+
+  .search-wrap input:focus {
+    border-color: #ef4444;
+    background: rgba(127, 29, 29, 0.15);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+  }
+
+  .search-wrap::before {
+    content: '';
+    position: absolute;
+    left: 16px; top: 50%;
+    width: 14px; height: 14px;
+    transform: translateY(-50%);
+    border: 2px solid #71717a;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: inset -2px -2px 0 -1px #71717a;
+  }
+
+  .search-wrap::after {
+    content: '';
+    position: absolute;
+    left: 27px; top: 56%;
+    width: 6px; height: 2px;
+    background: #71717a;
+    transform: rotate(45deg);
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 1px;
+  }
+
+  /* ===== Results ===== */
+  .results-panel { display: none; margin-top: 22px; }
+  .results-panel.show { display: block; animation: fadeIn 0.4s ease; }
+
+  .results-count {
+    font-size: 12px;
+    color: #71717a;
+    padding: 0 4px 14px;
+    font-weight: 600;
+  }
+
+  .results-count strong { color: #ef4444; font-weight: 800; }
+
+  .account-item {
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    background: rgba(15, 8, 8, 0.55);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    font-size: 12.5px;
+    line-height: 1.75;
+    animation: itemIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes itemIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .account-item:hover {
+    background: rgba(127, 29, 29, 0.2);
+    border-color: rgba(239, 68, 68, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -8px rgba(239, 68, 68, 0.35);
+  }
+
+  .line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 3px 0;
+  }
+
+  .k {
+    color: #71717a;
+    font-weight: 600;
+    flex-shrink: 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .v {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 11.5px;
+    word-break: break-all;
+    text-align: right;
+  }
+
+  .v.highlight {
+    color: #f87171;
+    text-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+  }
+
+  .server-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    font-family: inherit;
+    letter-spacing: 0.5px;
+  }
+
+  .status-ok {
+    color: #4ade80;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .status-ok::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 8px #4ade80;
+  }
+
+  .status-fail {
+    color: #ef4444;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .status-fail::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+  }
+
+  .empty-msg {
+    text-align: center;
+    padding: 40px 20px;
+    color: #52525b;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+
+  mark {
+    background: rgba(239, 68, 68, 0.4);
+    color: #fecaca;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-weight: 800;
+  }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translate(-50%, 140%);
+    z-index: 9999;
+    padding: 14px 26px;
+    border-radius: 16px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(185, 28, 28, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.7),
+      0 8px 20px rgba(239, 68, 68, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toast.show { transform: translate(-50%, 0); }
+  .toast.success {
+    background: rgba(21, 128, 61, 0.95);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 8px 20px rgba(74, 222, 128, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center;
+    margin-top: 44px;
+    font-size: 12.5px;
+    color: #52525b;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    animation: fadeIn 0.8s ease 0.5s both;
+  }
+
+  .footer strong {
+    color: #ef4444;
+    font-weight: 800;
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 500px) {
+    body { padding: 28px 14px 40px; }
+    .brand h1 { font-size: 28px; }
+    .brand-icon { width: 52px; height: 52px; font-size: 26px; }
+    .form-section { padding: 24px 18px; border-radius: 20px; }
+    .server-row { gap: 6px; }
+    .server-btn { padding: 11px 4px; font-size: 12px; }
+    .progress-percent { font-size: 19px; }
+    .toast { white-space: normal; max-width: 90vw; text-align: center; font-size: 12.5px; }
+  }
+
+  /* Fancy scrollbar for console */
+  .console::-webkit-scrollbar-track { background: transparent; }
+  .console::-webkit-scrollbar-thumb:hover { background: #ef4444; }
+</style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div class="bg-base"></div>
+<div class="bg-orb o1"></div>
+<div class="bg-orb o2"></div>
+<div class="bg-orb o3"></div>
+<div class="bg-grid"></div>
+<div class="bg-noise"></div>
+<div class="bg-scanlines"></div>
+
+<div class="container">
+
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="brand-icon">🔥</div>
+      <h1>ViRtU4Lios</h1>
+    </div>
+    <p>Free Fire Guest Account <span>Generator</span></p>
+  </div>
+
+  <!-- Form -->
+  <div class="form-section">
+
+    <div class="form-row">
+      <label class="form-label">Account Name</label>
+      <input type="text" id="name" class="form-input" placeholder="e.g. Player123" maxlength="20" autocomplete="off">
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Server</label>
+      <div class="server-row" id="serverRow">
+        <button type="button" class="server-btn" data-server="BD">BD</button>
+        <button type="button" class="server-btn" data-server="IND">IND</button>
+        <button type="button" class="server-btn" data-server="PK">PK</button>
+        <button type="button" class="server-btn" data-server="SG">SG</button>
+        <button type="button" class="server-btn" data-server="ID">ID</button>
+        <button type="button" class="server-btn active" data-server="ME">ME</button>
+        <button type="button" class="server-btn" data-server="VN">VN</button>
+        <button type="button" class="server-btn" data-server="TW">TW</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Number of Accounts</label>
+      <input type="number" id="count" class="form-input" placeholder="e.g. 5" min="1" max="50" value="1">
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="genBtn" onclick="generate()">
+        <span class="btn-icon">⚡</span>
+        <span>Generate Accounts</span>
+      </button>
+      <button class="btn btn-secondary" id="downloadBtn" onclick="downloadAccounts()" disabled>
+        <span class="btn-icon">⬇</span>
+        <span>Download accounts.json</span>
+      </button>
+      <button class="btn btn-secondary" id="clearBtn" onclick="clearResults()" disabled>
+        <span class="btn-icon">🗑</span>
+        <span>Clear Results</span>
+      </button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-header">
+        <div class="progress-label">
+          <div class="progress-spinner"></div>
+          <span>Generating</span>
+        </div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-status">
+        <span>Account <strong id="progressCurrent">0</strong> of <strong id="progressTotal">0</strong></span>
+        <span id="progressElapsed">0.0s</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Console -->
+  <div class="console" id="console"></div>
+
+  <!-- Search -->
+  <div class="search-wrap" id="searchWrap">
+    <input type="text" id="searchInput" placeholder="Search by name, UID, password or BOT ID..." oninput="renderResults()" autocomplete="off">
+  </div>
+
+  <!-- Results -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-count" id="resultsCount"></div>
+    <div id="resultsList"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Made by <strong>V!rTu4Lios</strong> · Telegram <strong>@ViRtU4Lios</strong>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const toastEl       = document.getElementById('toast');
+  const consoleEl     = document.getElementById('console');
+  const genBtn        = document.getElementById('genBtn');
+  const downloadBtn   = document.getElementById('downloadBtn');
+  const clearBtn      = document.getElementById('clearBtn');
+  const progressWrap  = document.getElementById('progressWrap');
+  const progressFill  = document.getElementById('progressFill');
+  const progressPct   = document.getElementById('progressPercent');
+  const progressCur   = document.getElementById('progressCurrent');
+  const progressTot   = document.getElementById('progressTotal');
+  const progressTime  = document.getElementById('progressElapsed');
+
+  let toastTimer;
+  let selectedServer = 'ME';
+  let accounts = [];
+  let isRunning = false;
+  let progressTimer = null;
+  let startTime = 0;
+  let targetCount = 0;
+
+  function showToast(msg, type = 'error') {
+    toastEl.innerHTML = msg;
+    toastEl.classList.toggle('success', type === 'success');
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3200);
+  }
+
+  function log(text, cls = 'log-info') {
+    const line = document.createElement('div');
+    line.className = 'log-line ' + cls;
+    line.textContent = text;
+    consoleEl.appendChild(line);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  document.getElementById('serverRow').addEventListener('click', e => {
+    const btn = e.target.closest('.server-btn');
+    if (!btn || isRunning) return;
+    document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedServer = btn.dataset.server;
+  });
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function highlight(text, q) {
+    const safe = escapeHtml(text);
+    if (!q) return safe;
+    const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return safe.replace(re, '<mark>$1</mark>');
+  }
+
+  function setProgress(created, total) {
+    const percent = total > 0 ? Math.min(100, Math.round((created / total) * 100)) : 0;
+    progressFill.style.width = percent + '%';
+    progressPct.textContent = percent + '%';
+    progressCur.textContent = created;
+    progressTot.textContent = total;
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    progressTime.textContent = elapsed + 's';
+  }
+
+  async function generate() {
+    if (isRunning) return;
+
+    const name  = document.getElementById('name').value.trim();
+    const count = parseInt(document.getElementById('count').value, 10);
+
+    if (!name) return showToast('⚠️ Please enter an account name');
+    if (!count || count < 1) return showToast('⚠️ Please enter a valid number');
+    if (count > 50) return showToast('⚠️ Maximum is 50 accounts');
+
+    isRunning = true;
+    accounts = [];
+    targetCount = count;
+    startTime = Date.now();
+
+    genBtn.disabled = true;
+    genBtn.innerHTML = '<span class="btn-icon">⏳</span><span>Generating...</span>';
+    downloadBtn.disabled = true;
+    clearBtn.disabled = true;
+
+    consoleEl.innerHTML = '';
+    consoleEl.classList.add('show');
+    document.getElementById('searchWrap').classList.add('show');
+    document.getElementById('searchInput').value = '';
+    document.getElementById('resultsPanel').classList.add('show');
+    document.getElementById('resultsCount').innerHTML = '';
+    document.getElementById('resultsList').innerHTML = '';
+
+    // Show progress
+    progressWrap.classList.add('show');
+    setProgress(0, count);
+    progressTimer = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      progressTime.textContent = elapsed + 's';
+    }, 100);
+
+    log('[⚡] Connecting to Python bot server...', 'log-warn');
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, server: selectedServer, count })
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`Server error ${response.status}: ${err}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try { handleMessage(JSON.parse(line)); }
+          catch (e) { log(line, 'log-info'); }
+        }
+      }
+
+      if (buffer.trim()) {
+        try { handleMessage(JSON.parse(buffer)); }
+        catch (e) { log(buffer, 'log-info'); }
+      }
+
+      // Final 100%
+      if (accounts.length > 0) {
+        setProgress(accounts.length, targetCount);
+        showToast(`✓ Generated ${accounts.length} account${accounts.length !== 1 ? 's' : ''}`, 'success');
+        downloadBtn.disabled = false;
+        clearBtn.disabled = false;
+      } else {
+        showToast('⚠️ No accounts were created');
+      }
+
+    } catch (err) {
+      log(`[✗] Error: ${err.message}`, 'log-error');
+      showToast('⚠️ Generation failed — check console');
+    } finally {
+      isRunning = false;
+      genBtn.disabled = false;
+      genBtn.innerHTML = '<span class="btn-icon">⚡</span><span>Generate Accounts</span>';
+      clearInterval(progressTimer);
+      setTimeout(() => progressWrap.classList.remove('show'), 1200);
+    }
+  }
+
+  function handleMessage(msg) {
+    if (msg.type === 'log') {
+      log(msg.text, msg.cls || 'log-info');
+    } else if (msg.type === 'account') {
+      accounts.push(msg.data);
+      renderResults();
+      setProgress(accounts.length, targetCount);
+      const a = msg.data;
+      const bioStr = a.bio_status ? 'bio: success' : 'bio: null';
+      log(`BOT = ${a.account_id} | UiD = ${a.uid} | PassWord = ${a.password} | NamE = ${a.name} | ReGioN = ${a.region} | ${bioStr} | Progress: ${accounts.length}/${targetCount}`, 'log-bot');
+    } else if (msg.type === 'done') {
+      log(`- Done! Created ${msg.created} accounts`, 'log-done');
+      log(`- Bio changed for ${msg.bio} accounts`, 'log-done');
+      setProgress(msg.created, targetCount);
+    }
+  }
+
+  function renderResults() {
+    const list = document.getElementById('resultsList');
+    const countEl = document.getElementById('resultsCount');
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+
+    if (accounts.length === 0) {
+      countEl.innerHTML = '';
+      list.innerHTML = '';
+      return;
+    }
+
+    const filtered = accounts.filter(a => !q ||
+      a.name.toLowerCase().includes(q) ||
+      a.password.toLowerCase().includes(q) ||
+      a.account_id.toLowerCase().includes(q) ||
+      a.uid.toLowerCase().includes(q)
+    );
+
+    countEl.innerHTML = q
+      ? `Found <strong>${filtered.length}</strong> of <strong>${accounts.length}</strong> accounts`
+      : `<strong>${accounts.length}</strong> account${accounts.length > 1 ? 's' : ''} generated`;
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty-msg">No accounts match your search</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(a => `
+      <div class="account-item">
+        <div class="line"><span class="k">BOT ID</span><span class="v">${highlight(a.account_id, q)}</span></div>
+        <div class="line"><span class="k">UID</span><span class="v highlight">${highlight(a.uid, q)}</span></div>
+        <div class="line"><span class="k">Password</span><span class="v">${highlight(a.password, q)}</span></div>
+        <div class="line"><span class="k">Name</span><span class="v">${highlight(a.name, q)}</span></div>
+        <div class="line"><span class="k">Region</span><span class="v"><span class="server-tag">${escapeHtml(a.region)}</span></span></div>
+        <div class="line"><span class="k">Bio</span><span class="v">${a.bio_status ? '<span class="status-ok">success</span>' : '<span class="status-fail">failed</span>'}</span></div>
+        <div class="line"><span class="k">Created</span><span class="v">${escapeHtml(a.date_created)}</span></div>
+      </div>
+    `).join('');
+  }
+
+  function downloadAccounts() {
+    if (accounts.length === 0) return;
+    const data = accounts.map(a => ({
+      uid: a.uid,
+      password: a.password,
+      account_id: a.account_id,
+      name: a.name,
+      region: a.region,
+      date_created: a.date_created
+    }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `accounts_${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(`✓ Downloaded ${accounts.length} accounts`, 'success');
+  }
+
+  function clearResults() {
+    accounts = [];
+    consoleEl.innerHTML = '';
+    consoleEl.classList.remove('show');
+    document.getElementById('searchWrap').classList.remove('show');
+    document.getElementById('resultsPanel').classList.remove('show');
+    document.getElementById('resultsList').innerHTML = '';
+    document.getElementById('resultsCount').innerHTML = '';
+    document.getElementById('searchInput').value = '';
+    progressWrap.classList.remove('show');
+    downloadBtn.disabled = true;
+    clearBtn.disabled = true;
+    showToast('✓ Results cleared', 'success');
+  }
+</script>
+
+</body>
+</html>
