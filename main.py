@@ -367,9 +367,5 @@ def api_generate():
                     headers={'X-Accel-Buffering':'no','Cache-Control':'no-cache'})
 
 if __name__ == '__main__':
-    print("="*50)
-    print("  Free Fire Guest Generator")
-    print("="*50)
-    print("[✓] http://localhost:5000")
-    print("[!] Ctrl+C to stop\n")
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
