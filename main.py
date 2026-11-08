@@ -28,6 +28,16 @@ DATADOME_DDK = "AE3F04AD3F0D3A462481A337485081"
 
 LOCK = threading.Lock()
 
+# ============ LOG HELPER (ensures Vercel shows logs) ============
+def log_msg(msg):
+    try:
+        print(msg, flush=True, file=sys.stderr)
+    except Exception:
+        try:
+            print(msg, flush=True)
+        except Exception:
+            pass
+
 # ============ PROTOBUF ============
 _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndata.proto\"\xbb\x01\n\x04\x44\x61ta\x12\x0f\n\x07\x66ield_2\x18\x02 \x01(\x05\x12\x1e\n\x07\x66ield_5\x18\x05 \x01(\x0b\x32\r.EmptyMessage\x12\x1e\n\x07\x66ield_6\x18\x06 \x01(\x0b\x32\r.EmptyMessage\x12\x0f\n\x07\x66ield_8\x18\x08 \x01(\t\x12\x0f\n\x07\x66ield_9\x18\t \x01(\x05\x12\x1f\n\x08\x66ield_11\x18\x0b \x01(\x0b\x32\r.EmptyMessage\x12\x1f\n\x08\x66ield_12\x18\x0c \x01(\x0b\x32\r.EmptyMessage\"\x0e\n\x0c\x45mptyMessageb\x06proto3')
@@ -103,7 +113,7 @@ def get_datadome_cookie():
         m = re.search(r'datadome=([^;]+)', r.headers.get("Set-Cookie",""))
         if m: return m.group(1)
     except Exception as e:
-        print(f"[datadome] error: {e}")
+        log_msg(f"[datadome] error: {e}")
     return None
 
 
@@ -127,48 +137,57 @@ def major_login(access_token, open_id, lang):
             'X-Unity-Version': "2018.4.12f1"
         }, data=data, verify=False, timeout=20)
 
-        print(f"[major_login] status={r.status_code} len={len(r.text)}")
+        log_msg(f"[major_login] status={r.status_code} len={len(r.text)}")
 
         if r.status_code != 200:
-            print(f"[major_login] FAIL body: {r.text[:200]}")
+            log_msg(f"[major_login] FAIL body: {r.text[:200]}")
             return None
 
         jwt_start = r.text.find("eyJ")
         if jwt_start == -1:
-            print(f"[major_login] no JWT in body: {r.text[:200]}")
+            log_msg(f"[major_login] no JWT in body: {r.text[:200]}")
             return None
 
-        jwt_token = r.text[jwt_start:]
-        second_dot = jwt_token.find(".", jwt_token.find(".") + 1)
-        if second_dot == -1:
-            print("[major_login] malformed JWT")
-            return None
+        # استخراج JWT كامل بدون قطع
+        match = re.match(r'(eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+)', r.text[jwt_start:])
+        if match:
+            jwt_token = match.group(1)
+        else:
+            second_dot = r.text.find(".", r.text.find(".", jwt_start) + 1)
+            if second_dot != -1:
+                end = second_dot + 44
+                while end < len(r.text) and (r.text[end].isalnum() or r.text[end] in "_-"):
+                    end += 1
+                jwt_token = r.text[jwt_start:end]
+            else:
+                log_msg("[major_login] malformed JWT")
+                return None
 
-        jwt_token = jwt_token[:second_dot + 44]
+        log_msg(f"[major_login] jwt extracted len={len(jwt_token)}")
+
         try:
             payload_part = jwt_token.split('.')[1]
             data_json = json.loads(base64.urlsafe_b64decode(payload_part + '=' * (4 - len(payload_part) % 4)))
             acc_id = data_json.get('account_id') or data_json.get('external_id')
             if acc_id:
-                print(f"[major_login] OK account_id={acc_id}")
+                log_msg(f"[major_login] OK account_id={acc_id} jwt_len={len(jwt_token)}")
                 return {"account_id": str(acc_id), "jwt_token": jwt_token}
             else:
-                print(f"[major_login] JWT has no account_id: {list(data_json.keys())}")
+                log_msg(f"[major_login] JWT has no account_id: {list(data_json.keys())}")
         except Exception as e:
-            print(f"[major_login] decode error: {e}")
+            log_msg(f"[major_login] decode error: {e}")
     except Exception as e:
-        print(f"[major_login] exception: {e}")
+        log_msg(f"[major_login] exception: {e}")
     return None
 
 
 def set_account_bio(jwt_token, bio_text):
-    import sys
-    print(f"[bio] START jwt={'YES' if jwt_token else 'NO'} len={len(jwt_token) if jwt_token else 0}", flush=True, file=sys.stderr)
-    
+    log_msg(f"[bio] START jwt={'YES' if jwt_token else 'NO'} len={len(jwt_token) if jwt_token else 0}")
+
     if not jwt_token or len(jwt_token) < 50:
-        print(f"[bio] ABORT: jwt_token invalid/empty", flush=True, file=sys.stderr)
+        log_msg(f"[bio] ABORT: jwt_token invalid/empty")
         return False
-    
+
     try:
         data = Data()
         data.field_2 = 17
@@ -179,9 +198,9 @@ def set_account_bio(jwt_token, bio_text):
         data.field_11.CopyFrom(EmptyMessage())
         data.field_12.CopyFrom(EmptyMessage())
         enc = AES.new(AES_KEY_G, AES.MODE_CBC, AES_IV_G).encrypt(pad(data.SerializeToString(), AES.block_size))
-        
-        print(f"[bio] sending request... enc_len={len(enc)}", flush=True, file=sys.stderr)
-        
+
+        log_msg(f"[bio] sending request... enc_len={len(enc)}")
+
         r = requests.post("https://clientbp.ppmainecoonghj.com/UpdateSocialBasicInfo", headers={
             "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
             "Accept-Encoding": "deflate, gzip", "X-GA-SV": "1789535861",
@@ -189,11 +208,11 @@ def set_account_bio(jwt_token, bio_text):
             "ReleaseVersion": "OB55", "Content-Type": "application/x-www-form-urlencoded",
             "X-Unity-Version": "2018.4.12f1", "Host": "clientbp.ppmainecoonghj.com",
         }, data=enc, timeout=20, verify=False)
-        
-        print(f"[bio] RESPONSE status={r.status_code} len={len(r.text)} body={r.text[:200]}", flush=True, file=sys.stderr)
+
+        log_msg(f"[bio] RESPONSE status={r.status_code} len={len(r.text)} body={r.text[:200]}")
         return r.status_code == 200
     except Exception as e:
-        print(f"[bio] EXCEPTION: {type(e).__name__}: {e}", flush=True, file=sys.stderr)
+        log_msg(f"[bio] EXCEPTION: {type(e).__name__}: {e}")
         return False
 
 
@@ -202,14 +221,14 @@ def create_account(region, prefix):
     max_attempts = 3
     for attempt in range(max_attempts):
         try:
-            print(f"[attempt {attempt+1}] starting...")
+            log_msg(f"[attempt {attempt+1}] starting...")
             password = generate_password()
 
             dd = get_datadome_cookie()
             if not dd:
-                print("[x] datadome failed")
+                log_msg("[x] datadome failed")
                 time.sleep(1); continue
-            print("[✓] datadome ok")
+            log_msg("[✓] datadome ok")
 
             # Register guest
             payload_reg = json.dumps({"app_id":100067,"client_type":2,"password":password,"source":2}, separators=(',',':'))
@@ -223,16 +242,16 @@ def create_account(region, prefix):
                     "Cookie": f"datadome={dd}",
                     "Host": "100067.connect.garena.com",
                 }, data=payload_reg, timeout=20, verify=False)
-            print(f"[register] status={r.status_code}")
+            log_msg(f"[register] status={r.status_code}")
             if r.status_code != 200:
-                print(f"[register] body: {r.text[:200]}")
+                log_msg(f"[register] body: {r.text[:200]}")
                 time.sleep(2**attempt); continue
             rj = r.json()
             if rj.get("code") != 0:
-                print(f"[register] code={rj.get('code')} msg={rj.get('message','')}")
+                log_msg(f"[register] code={rj.get('code')} msg={rj.get('message','')}")
                 continue
             uid = rj['data']['uid']
-            print(f"[✓] uid={uid}")
+            log_msg(f"[✓] uid={uid}")
 
             # Get token
             payload_tok = json.dumps({
@@ -248,17 +267,17 @@ def create_account(region, prefix):
                     "Cookie": f"datadome={dd}",
                     "Host": "100067.connect.garena.com",
                 }, data=payload_tok, timeout=20, verify=False)
-            print(f"[token] status={r.status_code}")
+            log_msg(f"[token] status={r.status_code}")
             if r.status_code != 200:
-                print(f"[token] body: {r.text[:200]}")
+                log_msg(f"[token] body: {r.text[:200]}")
                 continue
             tj = r.json()
             if tj.get("code") != 0:
-                print(f"[token] code={tj.get('code')}")
+                log_msg(f"[token] code={tj.get('code')}")
                 continue
             access_token = tj['data']['access_token']
             open_id = tj['data']['open_id']
-            print(f"[✓] access_token ok, open_id={open_id[:8]}...")
+            log_msg(f"[✓] access_token ok, open_id={open_id[:8]}...")
 
             keystream = [0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30]
             field = codecs.decode(''.join(chr(ord(open_id[i]) ^ keystream[i % len(keystream)]) for i in range(len(open_id))).encode('unicode_escape').decode('utf-8'), 'unicode_escape').encode('latin1')
@@ -280,14 +299,14 @@ def create_account(region, prefix):
                     "Content-Type": "application/x-www-form-urlencoded", "X-Unity-Version": "2018.4.12f1",
                     "Host": "loginbp.ppmainecoonghj.com"
                 }, data=enc_payload, verify=False, timeout=20)
-            print(f"[major_register] status={r.status_code} len={len(r.text)}")
+            log_msg(f"[major_register] status={r.status_code} len={len(r.text)}")
             if r.status_code != 200:
-                print(f"[major_register] body: {r.text[:200]}")
+                log_msg(f"[major_register] body: {r.text[:200]}")
                 continue
 
             login = major_login(access_token, open_id, lang)
             if not login:
-                print("[x] major_login failed")
+                log_msg("[x] major_login failed")
                 continue
 
             acc = {
@@ -301,13 +320,21 @@ def create_account(region, prefix):
                 "bio_status": False
             }
 
-            # Set bio - مباشرة بدون تأخير
-            acc['bio_status'] = set_account_bio(acc['jwt_token'], BIO_TEXT)
-            print(f"[✓] bio={acc['bio_status']}")
+            # Set bio
+            jwt = acc.get('jwt_token', '')
+            log_msg(f"[bio] check jwt present={bool(jwt)} len={len(jwt) if jwt else 0}")
+
+            if jwt:
+                acc['bio_status'] = set_account_bio(jwt, BIO_TEXT)
+            else:
+                log_msg(f"[bio] SKIPPED: no jwt_token available")
+                acc['bio_status'] = False
+
+            log_msg(f"[✓] bio={acc['bio_status']}")
 
             return acc
         except Exception as e:
-            print(f"[create_account] exception: {e}")
+            log_msg(f"[create_account] exception: {e}")
             time.sleep(0.5)
     return None
 
@@ -363,9 +390,9 @@ def api_generate():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print("="*50)
-    print("  Free Fire Guest Generator")
-    print("="*50)
-    print(f"[✓] http://localhost:{port}")
-    print("[!] Ctrl+C to stop\n")
+    log_msg("="*50)
+    log_msg("  Free Fire Guest Generator")
+    log_msg("="*50)
+    log_msg(f"[✓] http://localhost:{port}")
+    log_msg("[!] Ctrl+C to stop\n")
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
