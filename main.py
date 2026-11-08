@@ -162,6 +162,13 @@ def major_login(access_token, open_id, lang):
 
 
 def set_account_bio(jwt_token, bio_text):
+    import sys
+    print(f"[bio] START jwt={'YES' if jwt_token else 'NO'} len={len(jwt_token) if jwt_token else 0}", flush=True, file=sys.stderr)
+    
+    if not jwt_token or len(jwt_token) < 50:
+        print(f"[bio] ABORT: jwt_token invalid/empty", flush=True, file=sys.stderr)
+        return False
+    
     try:
         data = Data()
         data.field_2 = 17
@@ -173,6 +180,8 @@ def set_account_bio(jwt_token, bio_text):
         data.field_12.CopyFrom(EmptyMessage())
         enc = AES.new(AES_KEY_G, AES.MODE_CBC, AES_IV_G).encrypt(pad(data.SerializeToString(), AES.block_size))
         
+        print(f"[bio] sending request... enc_len={len(enc)}", flush=True, file=sys.stderr)
+        
         r = requests.post("https://clientbp.ppmainecoonghj.com/UpdateSocialBasicInfo", headers={
             "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
             "Accept-Encoding": "deflate, gzip", "X-GA-SV": "1789535861",
@@ -181,10 +190,10 @@ def set_account_bio(jwt_token, bio_text):
             "X-Unity-Version": "2018.4.12f1", "Host": "clientbp.ppmainecoonghj.com",
         }, data=enc, timeout=20, verify=False)
         
-        print(f"[bio] status={r.status_code} len={len(r.text)} body={r.text[:150]}")
+        print(f"[bio] RESPONSE status={r.status_code} len={len(r.text)} body={r.text[:200]}", flush=True, file=sys.stderr)
         return r.status_code == 200
     except Exception as e:
-        print(f"[bio] exception: {e}")
+        print(f"[bio] EXCEPTION: {type(e).__name__}: {e}", flush=True, file=sys.stderr)
         return False
 
 
