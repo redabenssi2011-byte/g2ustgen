@@ -20,7 +20,6 @@ AES_IV_G  = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
 
 REGION_LANG = {"BD":"bn","IND":"hi","PK":"ur","SG":"en","ID":"id","ME":"ar","VN":"vi","TW":"zh","CIS":"ru","TH":"th","EU":"en","US":"en","SAC":"es","LK":"en"}
 
-# ============ BIO (Watermark) ============
 BIO_TEXT = "[B][C][FF0000]@ViRtU4Lios [C][00FFFF]| [C][FFD700]Made by proxy [C][00FF00]| [C][FFFFFF]ViRtU4Lios BOT"
 
 DATADOME_CID = "FWTNdJThVpQebS2UwFDDVuTDUrooDRONkwc3RotkozZEl36Ud9amFYFASlPQMF~5P0rgDg1HOU~kVRzCxF6SzKLxq~n1woK49aR5JKDK6WeO1sPcQ1W41MJLWf0MurjT"
@@ -28,7 +27,7 @@ DATADOME_DDK = "AE3F04AD3F0D3A462481A337485081"
 
 LOCK = threading.Lock()
 
-# ============ LOG HELPER (ensures Vercel shows logs) ============
+# ============ LOG HELPER ============
 def log_msg(msg):
     try:
         print(msg, flush=True, file=sys.stderr)
@@ -148,7 +147,6 @@ def major_login(access_token, open_id, lang):
             log_msg(f"[major_login] no JWT in body: {r.text[:200]}")
             return None
 
-        # استخراج JWT كامل بدون قطع
         match = re.match(r'(eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+)', r.text[jwt_start:])
         if match:
             jwt_token = match.group(1)
@@ -178,6 +176,25 @@ def major_login(access_token, open_id, lang):
             log_msg(f"[major_login] decode error: {e}")
     except Exception as e:
         log_msg(f"[major_login] exception: {e}")
+    return None
+
+
+def major_login_with_retry(access_token, open_id, lang, max_retries=3):
+    """محاولة major_login مع retry تلقائي عند account_not_found"""
+    for i in range(max_retries):
+        if i > 0:
+            delay = 2 * i
+            log_msg(f"[major_login] retry {i+1}/{max_retries} after {delay}s...")
+            time.sleep(delay)
+
+        result = major_login(access_token, open_id, lang)
+        if result:
+            log_msg(f"[major_login] SUCCESS on attempt {i+1}")
+            return result
+
+        log_msg(f"[major_login] attempt {i+1}/{max_retries} failed")
+
+    log_msg(f"[major_login] ALL {max_retries} attempts failed")
     return None
 
 
@@ -218,7 +235,8 @@ def set_account_bio(jwt_token, bio_text):
 
 # ============ CREATE ACCOUNT ============
 def create_account(region, prefix):
-    max_attempts = 3
+    max_attempts = 5
+
     for attempt in range(max_attempts):
         try:
             log_msg(f"[attempt {attempt+1}] starting...")
@@ -230,7 +248,7 @@ def create_account(region, prefix):
                 time.sleep(1); continue
             log_msg("[✓] datadome ok")
 
-            # Register guest
+            # 1. Register guest
             payload_reg = json.dumps({"app_id":100067,"client_type":2,"password":password,"source":2}, separators=(',',':'))
             sig = hmac.new(API_SECRET_KEY.encode(), payload_reg.encode(), hashlib.sha256).hexdigest()
             r = requests.post("https://100067.connect.garena.com/api/v2/oauth/guest:register",
@@ -253,7 +271,7 @@ def create_account(region, prefix):
             uid = rj['data']['uid']
             log_msg(f"[✓] uid={uid}")
 
-            # Get token
+            # 2. Get access token
             payload_tok = json.dumps({
                 "client_id":100067, "client_secret":API_HEX_KEY, "client_type":2,
                 "device_id":"02-344afb0e-593c-40b7-92f2-171972f74807",
@@ -291,6 +309,7 @@ def create_account(region, prefix):
             })
             enc_payload = bytes.fromhex(encrypt_api(proto.hex()))
 
+            # 3. MajorRegister
             r = requests.post("https://loginbp.ppmainecoonghj.com/MajorRegister",
                 headers={
                     "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
@@ -304,9 +323,14 @@ def create_account(region, prefix):
                 log_msg(f"[major_register] body: {r.text[:200]}")
                 continue
 
-            login = major_login(access_token, open_id, lang)
+            # 4. Wait for propagation
+            log_msg("[wait] waiting 1.5s for account propagation...")
+            time.sleep(1.5)
+
+            # 5. MajorLogin with retry
+            login = major_login_with_retry(access_token, open_id, lang, max_retries=3)
             if not login:
-                log_msg("[x] major_login failed")
+                log_msg("[x] major_login failed after all retries")
                 continue
 
             acc = {
@@ -320,14 +344,14 @@ def create_account(region, prefix):
                 "bio_status": False
             }
 
-            # Set bio
+            # 6. Set bio
             jwt = acc.get('jwt_token', '')
             log_msg(f"[bio] check jwt present={bool(jwt)} len={len(jwt) if jwt else 0}")
 
             if jwt:
                 acc['bio_status'] = set_account_bio(jwt, BIO_TEXT)
             else:
-                log_msg(f"[bio] SKIPPED: no jwt_token available")
+                log_msg("[bio] SKIPPED: no jwt_token available")
                 acc['bio_status'] = False
 
             log_msg(f"[✓] bio={acc['bio_status']}")
@@ -345,6 +369,10 @@ app = Flask(__name__, static_folder='.')
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
+
+@app.route('/api/version')
+def api_version():
+    return {"version": "v3.0-full-fix", "has_retry": True, "has_bio_diagnostics": True}
 
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
@@ -391,7 +419,7 @@ def api_generate():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     log_msg("="*50)
-    log_msg("  Free Fire Guest Generator")
+    log_msg("  Free Fire Guest Generator v3.0")
     log_msg("="*50)
     log_msg(f"[✓] http://localhost:{port}")
     log_msg("[!] Ctrl+C to stop\n")
