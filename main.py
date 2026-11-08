@@ -19,7 +19,10 @@ AES_KEY_G = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
 AES_IV_G  = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
 
 REGION_LANG = {"BD":"bn","IND":"hi","PK":"ur","SG":"en","ID":"id","ME":"ar","VN":"vi","TW":"zh","CIS":"ru","TH":"th","EU":"en","US":"en","SAC":"es","LK":"en"}
-BIO_TEXT = "[B][C][FF0000]Made By @ViRtU4Lios"
+
+# ============ BIO (Watermark) ============
+BIO_TEXT = "[B][C][FF0000]@ViRtU4Lios [C][00FFFF]| [C][FFD700]Made by proxy [C][00FF00]| [C][FFFFFF]ViRtU4Lios BOT"
+
 DATADOME_CID = "FWTNdJThVpQebS2UwFDDVuTDUrooDRONkwc3RotkozZEl36Ud9amFYFASlPQMF~5P0rgDg1HOU~kVRzCxF6SzKLxq~n1woK49aR5JKDK6WeO1sPcQ1W41MJLWf0MurjT"
 DATADOME_DDK = "AE3F04AD3F0D3A462481A337485081"
 
@@ -89,7 +92,7 @@ def get_datadome_cookie():
             'fgp': "Redmi/serenity_global/serenity:15/AP3A.240905.015.A2/A15.0.26.0.VGWMIXM:user/release-keys",
             'tgs': "release-keys", 'inte': "android-java-okhttp"
         }
-        r = requests.post(url, data=payload, headers={'User-Agent':"okhttp/4.12.0",'Accept-Encoding':"gzip"}, timeout=10, verify=False)
+        r = requests.post(url, data=payload, headers={'User-Agent':"okhttp/4.12.0",'Accept-Encoding':"gzip"}, timeout=15, verify=False)
         try:
             js = r.json()
             m = re.search(r'datadome=([^;]+)', js.get("cookie",""))
@@ -104,12 +107,8 @@ def get_datadome_cookie():
     return None
 
 
-# ============ MAJOR LOGIN (with diagnostics) ============
+# ============ MAJOR LOGIN ============
 def major_login(access_token, open_id, lang):
-    """
-    ترجع dict فيه account_id و jwt_token أو None.
-    تطبع تفاصيل التشخيص.
-    """
     try:
         dT = bytes.fromhex('1a13323032362d30392d32382031363a33333a3039220966726565206669726528013a07312e3133322e38423e416e64726f6964204f53203135202f204150492d33352028415033412e3234303930352e3031352e41322f4131352e302e32362e302e5647574d49584d294a0848616e6468656c6452094d544e2053595249415a1243617272696572446174614e6574776f726b60e80c68d00572033332307a1d41524d3634204650204153494d4420414553207c2031383230207c20388001d21d8a01084d616c692d47353792013e4f70656e474c20455320332e322076312e72343970312d3034656163302e63383264376466616662353534653435316437303436356139613231666139389a012b476f6f676c657c34383535623136372d616539622d346237622d393531642d353234636336343461313962a2010c34362e35382e3137312e3639aa01026172b201203435393935623533323538333730306231393264643965356261646335316539ba010134c2010848616e6468656c64ca01115869616f6d69203235303238524e303341d201024d45ea014032383438303866316233326531653538343861303464666163303735633462633439613637613938646539303731356462343265313461316134666539663566f00101ca02094d544e205359524941d202023347ca03206538396231353865346263663938386562643039656238336635333738653837e00387df06e803cac701f003a50a8004cac801880487df069004cac801980487df06c80403d2045a2f646174612f6170702f7e7e35745f77707645586d6e3153656d6a757853337251673d3d2f636f6d2e6474732e667265656669726574682d56386e6233734e7a4b4a696a707a75737a55784c78773d3d2f6c69622f61726d3634e00401ea047a62386530636435653239356565653432663538363064336338366534383364647c2f646174612f6170702f7e7e35745f77707645586d6e3153656d6a757853337251673d3d2f636f6d2e6474732e667265656669726574682d56386e6233734e7a4b4a696a707a75737a55784c78773d3d2f626173652e61706bf00403f804028a050236349a050a32303139313231323239b205094f70656e474c455332b805ff3fc00504e0059b9501ea0507616e64726f6964f205704b717348547943694835645553466250354270506a44536e4f7235426652544d57323133433177397558326553476f6b317756356970464777385175503238326266496971724f4676364746766c4341794941384336787236483474316d35394933664e6153666f4466563435425748f805e7e40682062d7b226375725f72617465223a5b36302c39302c3132305d2c22737570706f72745f65746332223a66616c73657d8806019006019a060134a2060134b206094352171554095b5434c006f87bc80601d2068a0168747470733a2f2f646c2e616b2e66726565666972656d6f62696c652e636f6d2f6c6976652f4142486f74557064617465732f7c68747470733a2f2f636f72652d616b2e66726565666972656d6f62696c652e636f6d2f6c6976652f4142486f74557064617465732f7c3231316339333331363866353539303263376466626664386334653239353764da0612312e34323762356638316437323161343430')
         dT = dT.replace(b'2026-06-29 13:42:51', str(datetime.now())[:-7].encode())
@@ -126,7 +125,7 @@ def major_login(access_token, open_id, lang):
             'ReleaseVersion': "OB55",
             'Content-Type': "application/x-www-form-urlencoded",
             'X-Unity-Version': "2018.4.12f1"
-        }, data=data, verify=False, timeout=15)
+        }, data=data, verify=False, timeout=20)
 
         print(f"[major_login] status={r.status_code} len={len(r.text)}")
 
@@ -134,7 +133,6 @@ def major_login(access_token, open_id, lang):
             print(f"[major_login] FAIL body: {r.text[:200]}")
             return None
 
-        # البحث عن JWT
         jwt_start = r.text.find("eyJ")
         if jwt_start == -1:
             print(f"[major_login] no JWT in body: {r.text[:200]}")
@@ -174,16 +172,19 @@ def set_account_bio(jwt_token, bio_text):
         data.field_11.CopyFrom(EmptyMessage())
         data.field_12.CopyFrom(EmptyMessage())
         enc = AES.new(AES_KEY_G, AES.MODE_CBC, AES_IV_G).encrypt(pad(data.SerializeToString(), AES.block_size))
+        
         r = requests.post("https://clientbp.ppmainecoonghj.com/UpdateSocialBasicInfo", headers={
             "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
             "Accept-Encoding": "deflate, gzip", "X-GA-SV": "1789535861",
             "Authorization": f"Bearer {jwt_token}", "X-GA": "v1 1",
             "ReleaseVersion": "OB55", "Content-Type": "application/x-www-form-urlencoded",
             "X-Unity-Version": "2018.4.12f1", "Host": "clientbp.ppmainecoonghj.com",
-        }, data=enc, timeout=10, verify=False)
+        }, data=enc, timeout=20, verify=False)
+        
+        print(f"[bio] status={r.status_code} len={len(r.text)} body={r.text[:150]}")
         return r.status_code == 200
     except Exception as e:
-        print(f"[bio] error: {e}")
+        print(f"[bio] exception: {e}")
         return False
 
 
@@ -212,7 +213,7 @@ def create_account(region, prefix):
                     "Content-Type": "application/json; charset=utf-8",
                     "Cookie": f"datadome={dd}",
                     "Host": "100067.connect.garena.com",
-                }, data=payload_reg, timeout=10, verify=False)
+                }, data=payload_reg, timeout=20, verify=False)
             print(f"[register] status={r.status_code}")
             if r.status_code != 200:
                 print(f"[register] body: {r.text[:200]}")
@@ -237,7 +238,7 @@ def create_account(region, prefix):
                     "Content-Type": "application/json; charset=utf-8",
                     "Cookie": f"datadome={dd}",
                     "Host": "100067.connect.garena.com",
-                }, data=payload_tok, timeout=10, verify=False)
+                }, data=payload_tok, timeout=20, verify=False)
             print(f"[token] status={r.status_code}")
             if r.status_code != 200:
                 print(f"[token] body: {r.text[:200]}")
@@ -250,7 +251,6 @@ def create_account(region, prefix):
             open_id = tj['data']['open_id']
             print(f"[✓] access_token ok, open_id={open_id[:8]}...")
 
-            # Build name & proto
             keystream = [0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30]
             field = codecs.decode(''.join(chr(ord(open_id[i]) ^ keystream[i % len(keystream)]) for i in range(len(open_id))).encode('unicode_escape').decode('utf-8'), 'unicode_escape').encode('latin1')
 
@@ -263,7 +263,6 @@ def create_account(region, prefix):
             })
             enc_payload = bytes.fromhex(encrypt_api(proto.hex()))
 
-            # MajorRegister
             r = requests.post("https://loginbp.ppmainecoonghj.com/MajorRegister",
                 headers={
                     "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
@@ -271,13 +270,12 @@ def create_account(region, prefix):
                     "Authorization": "Bearer", "X-GA": "v1 1", "ReleaseVersion": "OB55",
                     "Content-Type": "application/x-www-form-urlencoded", "X-Unity-Version": "2018.4.12f1",
                     "Host": "loginbp.ppmainecoonghj.com"
-                }, data=enc_payload, verify=False, timeout=10)
+                }, data=enc_payload, verify=False, timeout=20)
             print(f"[major_register] status={r.status_code} len={len(r.text)}")
             if r.status_code != 200:
                 print(f"[major_register] body: {r.text[:200]}")
                 continue
 
-            # MajorLogin
             login = major_login(access_token, open_id, lang)
             if not login:
                 print("[x] major_login failed")
@@ -294,22 +292,9 @@ def create_account(region, prefix):
                 "bio_status": False
             }
 
-            # Set bio
-            time.sleep(0.5)
+            # Set bio - مباشرة بدون تأخير
             acc['bio_status'] = set_account_bio(acc['jwt_token'], BIO_TEXT)
             print(f"[✓] bio={acc['bio_status']}")
-
-            # Save to file
-            try:
-                existing = []
-                if os.path.exists(ACCOUNTS_FILE):
-                    with open(ACCOUNTS_FILE, 'r', encoding='utf-8') as f:
-                        try: existing = json.load(f)
-                        except: existing = []
-                existing.append({k: acc[k] for k in ['uid','password','account_id','name','region','date_created']})
-                with open(ACCOUNTS_FILE, 'w', encoding='utf-8') as f:
-                    json.dump(existing, f, indent=2, ensure_ascii=False)
-            except: pass
 
             return acc
         except Exception as e:
@@ -366,6 +351,12 @@ def api_generate():
     return Response(stream(), mimetype='application/x-ndjson',
                     headers={'X-Accel-Buffering':'no','Cache-Control':'no-cache'})
 
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    print("="*50)
+    print("  Free Fire Guest Generator")
+    print("="*50)
+    print(f"[✓] http://localhost:{port}")
+    print("[!] Ctrl+C to stop\n")
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
